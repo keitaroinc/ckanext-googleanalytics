@@ -1,17 +1,13 @@
 import logging
+
 from ckan.lib.base import BaseController, c, render, request
 import dbutil
 
-import urllib
-import urllib2
-
-import logging
 import ckan.logic as logic
 import hashlib
 import plugin
 from pylons import config
 
-from webob.multidict import UnicodeMultiDict
 from paste.util.multidict import MultiDict
 
 from ckan.controllers.api import ApiController
@@ -30,7 +26,7 @@ class GAController(BaseController):
 class GAApiController(ApiController):
     # intercept API calls to record via google analytics
     def _post_analytics(
-            self, user, request_obj_type, request_function, request_id):
+            self, user, request_obj_type, request_function, request_id, dataset=None, method=None):
         if config.get('googleanalytics.id'):
             data_dict = {
                 "v": 1,
@@ -42,9 +38,13 @@ class GAApiController(ApiController):
                 "dp": c.environ['PATH_INFO'],
                 "dr": c.environ.get('HTTP_REFERER', ''),
                 "ec": "CKAN API Request",
-                "ea": request_obj_type+request_function,
+                "ea": request_obj_type + request_function,
                 "el": request_id,
             }
+            if dataset:
+                data_dict.update({"cd1": dataset})
+            if method:
+                data_dict.update({"cd2": method})
             plugin.GoogleAnalyticsPlugin.analytics_queue.put(data_dict)
 
     def action(self, logic_function, ver=None):
@@ -55,22 +55,24 @@ class GAApiController(ApiController):
                 try_url_params=side_effect_free)
             if isinstance(request_data, dict):
                 id = request_data.get('id', '')
+                dataset = request_data.get('title', '')
+                method = c.environ['REQUEST_METHOD']
                 if 'q' in request_data:
                     id = request_data['q']
                 if 'query' in request_data:
                     id = request_data['query']
-                self._post_analytics(c.user, logic_function, '', id)
+                self._post_analytics(c.user, logic_function,
+                                     '', id, dataset, method)
         except Exception, e:
             log.debug(e)
             pass
-
         return ApiController.action(self, logic_function, ver)
 
     def list(self, ver=None, register=None,
              subregister=None, id=None):
         self._post_analytics(c.user,
                              register +
-                             ("_"+str(subregister) if subregister else ""),
+                             ("_" + str(subregister) if subregister else ""),
                              "list",
                              id)
         return ApiController.list(self, ver, register, subregister, id)
@@ -79,7 +81,7 @@ class GAApiController(ApiController):
              subregister=None, id=None, id2=None):
         self._post_analytics(c.user,
                              register +
-                             ("_"+str(subregister) if subregister else ""),
+                             ("_" + str(subregister) if subregister else ""),
                              "show",
                              id)
         return ApiController.show(self, ver, register, subregister, id, id2)
@@ -88,7 +90,7 @@ class GAApiController(ApiController):
                subregister=None, id=None, id2=None):
         self._post_analytics(c.user,
                              register +
-                             ("_"+str(subregister) if subregister else ""),
+                             ("_" + str(subregister) if subregister else ""),
                              "update",
                              id)
         return ApiController.update(self, ver, register, subregister, id, id2)
@@ -97,7 +99,7 @@ class GAApiController(ApiController):
                subregister=None, id=None, id2=None):
         self._post_analytics(c.user,
                              register +
-                             ("_"+str(subregister) if subregister else ""),
+                             ("_" + str(subregister) if subregister else ""),
                              "delete",
                              id)
         return ApiController.delete(self, ver, register, subregister, id, id2)
@@ -133,7 +135,7 @@ class GAResourceController(PackageController):
                 "dp": c.environ['PATH_INFO'],
                 "dr": c.environ.get('HTTP_REFERER', ''),
                 "ec": "CKAN Resource Download Request",
-                "ea": request_obj_type+request_function,
+                "ea": request_obj_type + request_function,
                 "el": request_id,
             }
             plugin.GoogleAnalyticsPlugin.analytics_queue.put(data_dict)
