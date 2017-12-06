@@ -27,6 +27,10 @@ class InitDB(CkanCommand):
     min_args = 0
 
     def command(self):
+        import logging
+        log = logging.getLogger(__name__)
+        log.error("TUKA---------------------------------------------------------------------------------------")
+        log.error(self._load_config())
         self._load_config()
         model.Session.remove()
         model.Session.configure(bind=model.meta.engine)

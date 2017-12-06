@@ -1,3 +1,10 @@
+.. image:: https://travis-ci.org/keitaroinc/ckanext-googleanalytics.svg?branch=master
+    :target: https://travis-ci.org/keitaroinc/ckanext-googleanalytics
+
+.. image:: https://coveralls.io/repos/github/keitaroinc/ckanext-googleanalytics/badge.svg?branch=master
+    :target: https://coveralls.io/github/keitaroinc/ckanext-googleanalytics?branch=master
+
+===============================
 CKAN Google Analytics Extension
 ===============================
 
